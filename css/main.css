@@ -1,0 +1,17 @@
+canvas {
+    height: calc(100vh - 2px);
+    width: inherit;
+    border: white solid 1px;
+    border-radius: 10px;
+    background: black;
+    display: block;
+}
+
+body {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: black;
+    margin: 0;
+}

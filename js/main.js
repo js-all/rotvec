@@ -14,7 +14,8 @@ var rotVecs = [
     { c: (0.1 * cw).toString(), n: 1 },
     { c: (0.1 * cw).toString(), n: -2 },
     { c: (0.02 * cw).toString(), n: 5 },
-    { c: (0.015 * cw).toString(), n: -5.001 }
+    { c: (0.015 * cw).toString(), n: -5.001 },
+    { c: (0.015 * cw).toString(), n: -12.001 }
 ];
 var drawnPoints = [];
 function draw() {
@@ -53,7 +54,7 @@ function draw() {
     // for performances data
     // store the point optained by the sum of every arrow and controll the number of stored points
     drawnPoints.push({ x: act.re, y: act.im });
-    if (drawnPoints.length > 1600) {
+    if (drawnPoints.length > 200) {
         drawnPoints.splice(0, 1);
     }
     var date2 = window.performance.now();
@@ -66,15 +67,15 @@ function draw() {
         for (var _a = 0, drawnPoints_1 = drawnPoints; _a < drawnPoints_1.length; _a++) {
             var i = drawnPoints_1[_a];
             ctx.lineTo(i.x, i.y);
-            //ctx.lineWidth -= (cw * 0.01) / drawnPoints.length
+            ctx.lineWidth -= (cw * 0.01) / drawnPoints.length;
+            ctx.stroke();
         }
-        ctx.stroke();
         ctx.closePath();
     }
     // for performances data
     var date22 = window.performance.now();
     data += date12 - date1 + "," + (date22 - date2) + "," + ((date12 - date1) + (date22 - date2)) + "," + t + ";";
-    if (t <= 10) {
+    if (t <= 2) {
         requestAnimationFrame(draw);
     }
     else {
@@ -105,15 +106,15 @@ function drawChart() {
         }
         NData.push(k);
     }
-    NData[0][0] = 0;
-    NData[0][2] = 0;
+    for (var i = 0; i < NData[0].length; i++) {
+        NData[0][i] = 0;
+    }
     var maxArr = [[], [], [], []];
     for (var _c = 0, NData_1 = NData; _c < NData_1.length; _c++) {
         var i = NData_1[_c];
-        maxArr[0].push(i[0]);
-        maxArr[1].push(i[1]);
-        maxArr[2].push(i[2]);
-        maxArr[3].push(i[3]);
+        for (var j = 0; j < i.length; j++) {
+            maxArr[j].push(i[j]);
+        }
     }
     var Ndata = [];
     var tempA = [];
@@ -125,42 +126,28 @@ function drawChart() {
     for (var i = 0; i < NData.length; i++) {
         Ndata.push([tempA[0][i], tempA[1][i], tempA[2][i], tempA[3][i]]);
     }
-    var max1 = Math.max.apply(Math, maxArr[0]);
-    var max2 = Math.max.apply(Math, maxArr[1]);
-    var max3 = Math.max.apply(Math, maxArr[2]);
-    var max = Math.max(max1, max2, max3);
-    var maxt = Math.max.apply(Math, maxArr[3]);
-    ctx.beginPath();
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 20;
-    ctx.moveTo(0, 0);
-    for (var _e = 0, Ndata_1 = Ndata; _e < Ndata_1.length; _e++) {
-        var i = Ndata_1[_e];
-        //@ts-ignore
-        ctx.lineTo(i[3] / maxt * 8000, i[0] / max * 8000);
-        ctx.stroke();
+    var maxs = [];
+    for (var _e = 0, maxArr_2 = maxArr; _e < maxArr_2.length; _e++) {
+        var i = maxArr_2[_e];
+        [
+            maxs.push(Math.max.apply(Math, i))
+        ];
     }
-    ctx.closePath();
-    ctx.beginPath();
-    ctx.strokeStyle = "blue";
-    ctx.moveTo(0, 0);
-    for (var _f = 0, Ndata_2 = Ndata; _f < Ndata_2.length; _f++) {
-        var i = Ndata_2[_f];
-        //@ts-ignore
-        ctx.lineTo(i[3] / maxt * 8000, i[1] / max * 8000);
+    var max = Math.max.apply(Math, maxs);
+    var maxt = Math.max.apply(Math, maxArr[maxArr.length - 1]);
+    for (var i = 0; i < maxArr.length - 1; i++) {
+        ctx.beginPath();
+        ctx.strokeStyle = "rgb(" + hslToRgb((1 / (maxArr.length - 1) * i), 1, .5).join(',') + ")";
+        ctx.lineWidth = 20;
+        ctx.moveTo(0, 0);
+        for (var _f = 0, Ndata_1 = Ndata; _f < Ndata_1.length; _f++) {
+            var e = Ndata_1[_f];
+            //@ts-ignore
+            ctx.lineTo(e[e.length - 1] / maxt * 8000, e[i] / max * 8000);
+            ctx.stroke();
+        }
+        ctx.closePath();
     }
-    ctx.stroke();
-    ctx.closePath();
-    ctx.beginPath();
-    ctx.strokeStyle = "green";
-    ctx.moveTo(0, 0);
-    for (var _g = 0, Ndata_3 = Ndata; _g < Ndata_3.length; _g++) {
-        var i = Ndata_3[_g];
-        //@ts-ignore
-        ctx.lineTo(i[3] / maxt * 8000, i[2] / max * 8000);
-    }
-    ctx.stroke();
-    ctx.closePath();
 }
 draw();
 var _$$c = canvas;
@@ -189,4 +176,31 @@ function smoothArray(array) {
         res.push((beforeP + i + afterP) / 3);
     }
     return res;
+}
+function hslToRgb(h, s, l) {
+    var r, g, b;
+    if (s == 0) {
+        r = g = b = l; // achromatic
+    }
+    else {
+        var hue2rgb = function hue2rgb(p, q, t) {
+            if (t < 0)
+                t += 1;
+            if (t > 1)
+                t -= 1;
+            if (t < 1 / 6)
+                return p + (q - p) * 6 * t;
+            if (t < 1 / 2)
+                return q;
+            if (t < 2 / 3)
+                return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1 / 3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }

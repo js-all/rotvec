@@ -21,7 +21,8 @@ const rotVecs: rotVec[] = [
     { c: (0.1 * cw).toString(), n: 1 },
     { c: (0.1 * cw).toString(), n: -2 },
     { c: (0.02 * cw).toString(), n: 5 },
-    { c: (0.015 * cw).toString(), n: -5.001 }
+    { c: (0.015 * cw).toString(), n: -5.001 },
+    { c: (0.015 * cw).toString(), n: -12.001 }
 ];
 const drawnPoints: { x: number, y: number }[] = [];
 function draw() {
@@ -59,7 +60,7 @@ function draw() {
     // for performances data
     // store the point optained by the sum of every arrow and controll the number of stored points
     drawnPoints.push({ x: act.re, y: act.im });
-    if (drawnPoints.length > 1600) {
+    if (drawnPoints.length > 200) {
         drawnPoints.splice(0, 1);
     }
     const date2 = window.performance.now();
@@ -71,15 +72,15 @@ function draw() {
         ctx.lineWidth = cw * 0.0025
         for (let i of drawnPoints) {
             ctx.lineTo(i.x, i.y);
-            //ctx.lineWidth -= (cw * 0.01) / drawnPoints.length
+            ctx.lineWidth -= (cw * 0.01) / drawnPoints.length
+            ctx.stroke();
         }
-        ctx.stroke();
         ctx.closePath();
     }
     // for performances data
     const date22 = window.performance.now();
     data += `${date12 - date1},${date22 - date2},${(date12 - date1) + (date22 - date2)},${t};`;
-    if (t <= 10) { requestAnimationFrame(draw); }
+    if (t <= 2) { requestAnimationFrame(draw); }
     else { drawChart() }
 }
 const int = setInterval(() => t += 0.0025, 1);
@@ -104,14 +105,15 @@ function drawChart() {
         }
         NData.push(k);
     }
-    NData[0][0] = 0;
-    NData[0][2] = 0;
+    for (let i = 0; i < NData[0].length; i++) {
+        NData[0][i] = 0;
+    }
     const maxArr: number[][] = [[], [], [], []];
     for (let i of NData) {
-        maxArr[0].push(i[0]);
-        maxArr[1].push(i[1]);
-        maxArr[2].push(i[2]);
-        maxArr[3].push(i[3]);
+        for (let j = 0; j < i.length; j++) {
+            maxArr[j].push(i[j]);
+
+        }
     }
     const Ndata: number[][] = [];
     const tempA: number[][] = [];
@@ -124,39 +126,24 @@ function drawChart() {
 
 
     }
-    const max1 = Math.max(...maxArr[0])
-    const max2 = Math.max(...maxArr[1])
-    const max3 = Math.max(...maxArr[2])
-    const max = Math.max(max1, max2, max3);
-    const maxt = Math.max(...maxArr[3])
-    ctx.beginPath();
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 20;
-    ctx.moveTo(0, 0);
-    for (let i of Ndata) {
-        //@ts-ignore
-        ctx.lineTo(i[3] / maxt * 8000, i[0] / max * 8000);
-        ctx.stroke();
+    const maxs: number[] = [];
+    for (let i of maxArr) [
+        maxs.push(Math.max(...i))
+    ]
+    const max = Math.max(...maxs);
+    const maxt = Math.max(...maxArr[maxArr.length - 1])
+    for (let i = 0; i < maxArr.length - 1; i++) {
+        ctx.beginPath();
+        ctx.strokeStyle = "rgb(" + hslToRgb((1 / (maxArr.length - 1) * i), 1, .5).join(',') + ")"
+        ctx.lineWidth = 20;
+        ctx.moveTo(0, 0);
+        for (let e of Ndata) {
+            //@ts-ignore
+            ctx.lineTo(e[e.length - 1] / maxt * 8000, e[i] / max * 8000);
+            ctx.stroke();
+        }
+        ctx.closePath();
     }
-    ctx.closePath();
-    ctx.beginPath();
-    ctx.strokeStyle = "blue";
-    ctx.moveTo(0, 0);
-    for (let i of Ndata) {
-        //@ts-ignore
-        ctx.lineTo(i[3] / maxt * 8000, i[1] / max * 8000);
-    }
-    ctx.stroke();
-    ctx.closePath();
-    ctx.beginPath();
-    ctx.strokeStyle = "green";
-    ctx.moveTo(0, 0);
-    for (let i of Ndata) {
-        //@ts-ignore
-        ctx.lineTo(i[3] / maxt * 8000, i[2] / max * 8000);
-    }
-    ctx.stroke();
-    ctx.closePath();
 }
 
 draw();
@@ -192,4 +179,27 @@ function smoothArray(array: number[]) {
     return res;
 }
 
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+    var r: number, g: number, b: number;
 
+    if (s == 0) {
+        r = g = b = l; // achromatic
+    } else {
+        var hue2rgb = function hue2rgb(p, q, t) {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1 / 3);
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
